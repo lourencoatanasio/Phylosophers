@@ -29,7 +29,7 @@ int	ft_atoi(char *str)
 	return (result * sign);
 }
 
-void	list_index(t_node *head, int index)
+t_node  *list_index(t_node *head, int index)
 {
 	t_node	*tmp;
 
@@ -108,8 +108,10 @@ t_forks	*assign_forks(t_node *forks, int index)
 	return (utils);
 }
 
-void	philosopher(t_forks *utils, t_node *forks, int index)
+void	philosopher(t_forks *utils, int index, int num_philo, int &start)
 {
+    //como e que passo o start para a funcao?
+    while ((int)start < num_philo)
 	while (1)
 	{
 		if (utils->left_fork->value == 1) {
@@ -121,8 +123,35 @@ void	philosopher(t_forks *utils, t_node *forks, int index)
 			}
 			else
 				utils->left_fork->value = 1;
-		}
+        }
 	}
+}
+
+void    create_threads(t_node *forks, int num_philo)
+{
+    int i;
+    int *j;
+    t_forks *utils;
+    t_thread *threads;
+
+    i = 0;
+    j = malloc(sizeof(int));
+    j = 0;
+    threads = (t_thread *)malloc(sizeof(t_thread) * num_philo);
+    while (i < num_philo)
+    {
+        utils = assign_forks(forks, i + 1);
+        //how do these work?
+        pthread_create(&threads[i].thread, NULL, philosopher(utils, i + 1, num_philo, &j), NULL);
+        j++;
+        i++;
+    }
+    i = 0;
+    while (i < num_philo)
+    {
+        pthread_join(threads[i].thread, NULL);
+        i++;
+    }
 }
 
 int main(int argc, char **argv)
@@ -139,7 +168,8 @@ int main(int argc, char **argv)
 		add_node(&forks, create_node(1, i + 1));
 		i++;
 	}
-	usleep(5000000);
+    create_threads(forks, ft_atoi(argv[1]));
+//	usleep(5000000);
 	print_list(forks);
 	free_list(&forks);
 	return 0;

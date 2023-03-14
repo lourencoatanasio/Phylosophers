@@ -18,6 +18,12 @@ typedef struct s_node
 	struct s_node *next;
 } t_node;
 
+typedef struct s_thread
+{
+    pthread_t thread;
+    int index;
+} t_thread;
+
 typedef struct s_forks
 {
 	t_node *left_fork;

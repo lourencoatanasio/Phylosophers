@@ -29,6 +29,23 @@ int	ft_atoi(char *str)
 	return (result * sign);
 }
 
+long long int	s_to_mil(struct timeval t)
+{
+	long long int	res;
+
+	res = t.tv_sec * 1000;
+	res += t.tv_usec / 1000;
+	return (res);
+}
+
+long long int	gt(struct timeval start)
+{
+	struct timeval	tv;
+
+	gettimeofday(&tv, NULL);
+	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000) - s_to_mil(start));
+}
+
 t_node  *list_index(t_node *head, int index)
 {
 	t_node	*tmp;
@@ -108,42 +125,63 @@ t_forks	*assign_forks(t_node *forks, int index)
 	return (utils);
 }
 
-void	philosopher(t_forks *utils, int index, int num_philo, int &start)
+void	eating(t_philo *philo)
 {
-    //como e que passo o start para a funcao?
-    while ((int)start < num_philo)
+	philo->forks->right_fork->value = 0;
+	usleep(5000);
+	printf("Philosopher %d is eating ||\n============================\nLeft_Fork -> %d\nRight_Fork -> %d\n\n", philo->index, philo->forks->left_fork->value, philo->forks->right_fork->value);
+	philo->forks->left_fork->value = 1;
+	philo->forks->right_fork->value = 1;
+}
+
+void	philosopher(t_philo *philo)
+{
+    while (*philo->start <= philo->num_philo)
+		;
+	usleep(200);
+	gettimeofday(&philo->start_time, NULL);
+	printf("Philosopher %d is starting ||\n============================\nLeft_Fork -> %d\nRight_Fork -> %d\n\n", philo->index, philo->forks->left_fork->value, philo->forks->right_fork->value);
+	usleep(200);
+	gt(philo->start_time);
 	while (1)
 	{
-		if (utils->left_fork->value == 1) {
-			utils->left_fork->value = 0;
-			if (utils->right_fork->value == 1) {
-				utils->right_fork->value = 0;
-				// eat
-				usleep(5000);
-			}
-			else
-				utils->left_fork->value = 1;
-        }
+		if(philo->forks->left_fork->value == 1) {
+			philo->forks->left_fork->value = 0;
+			if (philo->forks->right_fork->value == 1)
+				eating(philo);
+		}
 	}
+}
+
+t_philo *create_philo(t_forks *utils, int index, int num_philo, int *start)
+{
+	t_philo *philo;
+	philo = (t_philo *)malloc(sizeof(t_philo));
+	philo->forks = utils;
+	philo->index = index;
+	philo->num_philo = num_philo;
+	philo->start = start;
+	return (philo);
 }
 
 void    create_threads(t_node *forks, int num_philo)
 {
     int i;
-    int *j;
     t_forks *utils;
     t_thread *threads;
+	t_philo **philo;
 
-    i = 0;
-    j = malloc(sizeof(int));
-    j = 0;
+    i = 1;
+	printf("num_philo	 %d\n", num_philo);
+	philo = (t_philo **)malloc(sizeof(t_philo *) * num_philo);
     threads = (t_thread *)malloc(sizeof(t_thread) * num_philo);
-    while (i < num_philo)
+    while (i <= num_philo + 1)
     {
-        utils = assign_forks(forks, i + 1);
+        utils = assign_forks(forks, i);
+		philo[i] = create_philo(utils, i, num_philo, &i);
+		printf("philo->index %d\nphilo->num_philo %d\nphilo->start %d\n\n", philo[i]->index, philo[i]->num_philo, *philo[i]->start);
         //how do these work?
-        pthread_create(&threads[i].thread, NULL, philosopher(utils, i + 1, num_philo, &j), NULL);
-        j++;
+        pthread_create(&threads[i].thread, NULL, (void *)philosopher, philo[i]);
         i++;
     }
     i = 0;

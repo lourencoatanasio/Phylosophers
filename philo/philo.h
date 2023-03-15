@@ -21,7 +21,6 @@ typedef struct s_node
 typedef struct s_thread
 {
     pthread_t thread;
-    int index;
 } t_thread;
 
 typedef struct s_forks
@@ -29,5 +28,14 @@ typedef struct s_forks
 	t_node *left_fork;
 	t_node *right_fork;
 } t_forks;
+
+typedef struct s_philo
+{
+	t_forks *forks;
+	struct timeval start_time;
+	int index;
+	int num_philo;
+	int *start;
+} t_philo;
 
 #endif //PHILO_PHILO_H

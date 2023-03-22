@@ -13,15 +13,18 @@
 
 typedef struct s_node
 {
+	pthread_mutex_t mutex;
 	int value;
 	int index;
 	struct s_node *next;
 } t_node;
 
-typedef struct s_thread
+typedef struct s_times
 {
-    pthread_t thread;
-} t_thread;
+	int time_death;
+	int time_sleep;
+	int time_eat;
+} t_times;
 
 typedef struct s_forks
 {
@@ -32,7 +35,9 @@ typedef struct s_forks
 typedef struct s_philo
 {
 	t_forks *forks;
+	t_times *times;
 	struct timeval start_time;
+	long long int last_eat;
 	int index;
 	int num_philo;
 	int *start;

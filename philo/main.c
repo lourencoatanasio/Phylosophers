@@ -113,36 +113,89 @@ void	print_list(t_node *head)
 	}
 }
 
-int is_dead(t_philo *philo)
+int is_dead(t_philo *philo, int *died)
 {
 	if (gt(philo->start_time) - philo->last_eat > philo->times->time_death)
 	{
 		printf("\033[1;30m%lld ms philo %d died\n\033[0m", gt(((t_philo *)philo)->start_time), ((t_philo *)philo)->index);
+		pthread_mutex_unlock(&((t_philo *) philo)->forks->left_fork->mutex);
+		if((t_philo *)philo->forks->right_fork != NULL)
+			pthread_mutex_unlock(&((t_philo *) philo)->forks->right_fork->mutex);
+		*died = 1;
 		return (1);
 	}
 	return (0);
 }
 
+int	eat(t_philo *philo, int *died)
+{
+	((t_philo *)philo)->last_eat = gt(((t_philo *)philo)->start_time);
+	if (is_dead(philo, died) == 1 || *died == 1)
+		return 1;
+	printf("\033[1;91m%lld ms philo %d is eating\n\033[0m", gt(((t_philo *)philo)->start_time), ((t_philo *)philo)->index);
+	while(gt(philo->start_time) - philo->last_eat < philo->times->time_eat)
+	{
+		if (is_dead(philo, died) == 1 || *died == 1)
+			return 1;
+	}
+	return 0;
+}
+
+int sleeping(t_philo *philo, int *died)
+{
+	printf("\033[1;92m%lld ms philo %d is sleeping\n\033[0m", gt(((t_philo *)philo)->start_time), ((t_philo *)philo)->index);
+	while(gt(philo->start_time) - philo->last_eat < philo->times->time_sleep + philo->times->time_eat)
+	{
+		if (is_dead(philo, died) == 1 || *died == 1)
+			return 1;
+	}
+	return 0;
+}
+
+void message(t_philo *philo, int *died)
+{
+	if (is_dead(philo, died) == 1 || *died == 1)
+		return ;
+	printf("\033[1;93m%lld ms philo %d is thinking\n\033[0m", gt(((t_philo *)philo)->start_time), ((t_philo *)philo)->index);
+}
+
 void	*philosopher(void *philo)
 {
+	static int		died;
+
+	died = 0;
     while (*((t_philo *)philo)->start < ((t_philo *)philo)->num_philo)
 		;
 	gettimeofday(&((t_philo *)philo)->start_time, NULL);
 	if(((t_philo *)philo)->index % 2 == 0)
-		usleep(500);
-	while(is_dead((t_philo *)philo) == 0)
-	{
-		pthread_mutex_lock(&((t_philo *)philo)->forks->left_fork->mutex);
-		printf("\033[1;34m%lld ms philo %d took left fork\n\033[0m", gt(((t_philo *)philo)->start_time), ((t_philo *)philo)->index);
-		pthread_mutex_lock(&((t_philo *)philo)->forks->right_fork->mutex);
-		((t_philo *)philo)->last_eat = gt(((t_philo *)philo)->start_time);
-		printf("\033[1;34m%lld ms philo %d took right fork\n\033[0m", gt(((t_philo *)philo)->start_time), ((t_philo *)philo)->index);
-		printf("\033[1;91m%lld ms philo %d is eating\n\033[0m", gt(((t_philo *)philo)->start_time), ((t_philo *)philo)->index);
-		usleep(((t_philo *)philo)->times->time_eat * 1000);
-		pthread_mutex_unlock(&((t_philo *)philo)->forks->left_fork->mutex);
-		pthread_mutex_unlock(&((t_philo *)philo)->forks->right_fork->mutex);
-		printf("\033[1;92m%lld ms philo %d is sleeping\n\033[0m", gt(((t_philo *)philo)->start_time), ((t_philo *)philo)->index);
-		usleep(((t_philo *)philo)->times->time_sleep * 1000);
+		usleep(100);
+	while(is_dead((t_philo *)philo, &died) == 0) {
+		if (died == 1 || is_dead((t_philo *) philo, &died) == 1)
+			break;
+		pthread_mutex_lock(&((t_philo *) philo)->forks->left_fork->mutex);
+		printf("\033[1;34m%lld ms philo %d took left fork\n\033[0m", gt(((t_philo *) philo)->start_time),
+			   ((t_philo *) philo)->index);
+		if (((t_philo *)philo)->forks->right_fork == NULL)
+		{
+			while (1) {
+				if (is_dead((t_philo *) philo, &died) == 1)
+					break;
+			}
+			break;
+		}
+		if (died == 1 || is_dead((t_philo *) philo, &died) == 1)
+			break ;
+		pthread_mutex_lock(&((t_philo *) philo)->forks->right_fork->mutex);
+		printf("\033[1;34m%lld ms philo %d took right fork\n\033[0m", gt(((t_philo *) philo)->start_time),
+			   ((t_philo *) philo)->index);
+		if (eat((t_philo *) philo, &died) == 1)
+			break ;
+		pthread_mutex_unlock(&((t_philo *) philo)->forks->left_fork->mutex);
+		pthread_mutex_unlock(&((t_philo *) philo)->forks->right_fork->mutex);
+		if (sleeping((t_philo *) philo, &died) == 1)
+			break;
+		if (died == 1 || is_dead((t_philo *) philo, &died) == 1)
+			break;
 		printf("\033[1;93m%lld ms philo %d is thinking\n\033[0m", gt(((t_philo *)philo)->start_time), ((t_philo *)philo)->index);
 	}
 }
@@ -159,12 +212,14 @@ t_philo *create_philo(t_forks *utils, int index, int num_philo, int *start, t_ti
 	return (philo);
 }
 
-t_forks *assign_forks(t_node *forks, int index)
+t_forks *assign_forks(t_node *forks, int index, int num_philo)
 {
 	t_forks *utils;
 	utils = (t_forks *)malloc(sizeof(t_forks));
 	utils->left_fork = list_index(forks, index);
-	if (list_index(forks, index + 1) == NULL)
+	if (num_philo == 1)
+		utils->right_fork = NULL;
+	else if (list_index(forks, index + 1) == NULL)
 		utils->right_fork = list_index(forks, 1);
 	else
 		utils->right_fork = list_index(forks, index + 1);
@@ -184,7 +239,7 @@ void    create_threads(t_node *forks, int num_philo, t_times *times)
     th = (pthread_t *)malloc(sizeof(pthread_t) * num_philo);
     while (i < num_philo)
     {
-        utils = assign_forks(forks, i + 1);
+        utils = assign_forks(forks, i + 1, num_philo);
 		philo[i] = create_philo(utils, i + 1, num_philo, &i, times);
         pthread_create(&th[i], NULL, philosopher, philo[i]);
         i++;

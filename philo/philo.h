@@ -11,6 +11,13 @@
 #include <pthread.h>
 #include <sys/time.h>
 
+#define LEFT_FORK 0
+#define RIGHT_FORK 1
+#define EAT 2
+#define SLEEP 3
+#define THINK 4
+#define DIED 5
+
 typedef struct s_node
 {
 	pthread_mutex_t mutex;
@@ -41,6 +48,7 @@ typedef struct s_philo
 	int index;
 	int num_philo;
 	int *start;
+	int times_eat;
 } t_philo;
 
 #endif //PHILO_PHILO_H

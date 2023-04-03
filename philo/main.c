@@ -113,11 +113,29 @@ void	print_list(t_node *head)
 	}
 }
 
+void message(t_philo *philo, int message)
+{
+
+	if(message == 0)
+		printf("\033[1;34m%lld ms philo %d took left fork\n\033[0m", gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
+	else if(message == 1)
+		printf("\033[1;34m%lld ms philo %d took right fork\n\033[0m", gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
+	else if(message == 2)
+		printf("\033[1;91m%lld ms philo %d is eating\n\033[0m", gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
+	else if(message == 3)
+		printf("\033[1;92m%lld ms philo %d is sleeping\n\033[0m", gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
+	else if(message == 4)
+		printf("\033[1;93m%lld ms philo %d is thinking\n\033[0m", gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
+	else if(message == 5)
+		printf("\033[1;30m%lld ms philo %d died\n\033[0m", gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
+}
+
+
 int is_dead(t_philo *philo, int *died)
 {
 	if (gt(philo->start_time) - philo->last_eat > philo->times->time_death)
 	{
-		printf("\033[1;30m%lld ms philo %d died\n\033[0m", gt(((t_philo *)philo)->start_time), ((t_philo *)philo)->index);
+		message(philo, DIED);
 		pthread_mutex_unlock(&((t_philo *) philo)->forks->left_fork->mutex);
 		if((t_philo *)philo->forks->right_fork != NULL)
 			pthread_mutex_unlock(&((t_philo *) philo)->forks->right_fork->mutex);
@@ -132,7 +150,7 @@ int	eat(t_philo *philo, int *died)
 	((t_philo *)philo)->last_eat = gt(((t_philo *)philo)->start_time);
 	if (is_dead(philo, died) == 1 || *died == 1)
 		return 1;
-	printf("\033[1;91m%lld ms philo %d is eating\n\033[0m", gt(((t_philo *)philo)->start_time), ((t_philo *)philo)->index);
+	message(philo, EAT);
 	while(gt(philo->start_time) - philo->last_eat < philo->times->time_eat)
 	{
 		if (is_dead(philo, died) == 1 || *died == 1)
@@ -143,20 +161,13 @@ int	eat(t_philo *philo, int *died)
 
 int sleeping(t_philo *philo, int *died)
 {
-	printf("\033[1;92m%lld ms philo %d is sleeping\n\033[0m", gt(((t_philo *)philo)->start_time), ((t_philo *)philo)->index);
+	message(philo, SLEEP);
 	while(gt(philo->start_time) - philo->last_eat < philo->times->time_sleep + philo->times->time_eat)
 	{
 		if (is_dead(philo, died) == 1 || *died == 1)
 			return 1;
 	}
 	return 0;
-}
-
-void message(t_philo *philo, int *died)
-{
-	if (is_dead(philo, died) == 1 || *died == 1)
-		return ;
-	printf("\033[1;93m%lld ms philo %d is thinking\n\033[0m", gt(((t_philo *)philo)->start_time), ((t_philo *)philo)->index);
 }
 
 void	*philosopher(void *philo)
@@ -168,16 +179,15 @@ void	*philosopher(void *philo)
 		;
 	gettimeofday(&((t_philo *)philo)->start_time, NULL);
 	if(((t_philo *)philo)->index % 2 == 0)
-		usleep(100);
-	while(is_dead((t_philo *)philo, &died) == 0) {
-		if (died == 1 || is_dead((t_philo *) philo, &died) == 1)
-			break;
+		usleep(100000);
+	while(died == 1 || is_dead((t_philo *)philo, &died) == 0)
+	{
 		pthread_mutex_lock(&((t_philo *) philo)->forks->left_fork->mutex);
-		printf("\033[1;34m%lld ms philo %d took left fork\n\033[0m", gt(((t_philo *) philo)->start_time),
-			   ((t_philo *) philo)->index);
+		message((t_philo *)philo, LEFT_FORK);
 		if (((t_philo *)philo)->forks->right_fork == NULL)
 		{
-			while (1) {
+			while (1)
+			{
 				if (is_dead((t_philo *) philo, &died) == 1)
 					break;
 			}
@@ -186,17 +196,16 @@ void	*philosopher(void *philo)
 		if (died == 1 || is_dead((t_philo *) philo, &died) == 1)
 			break ;
 		pthread_mutex_lock(&((t_philo *) philo)->forks->right_fork->mutex);
-		printf("\033[1;34m%lld ms philo %d took right fork\n\033[0m", gt(((t_philo *) philo)->start_time),
-			   ((t_philo *) philo)->index);
-		if (eat((t_philo *) philo, &died) == 1)
+		message((t_philo *)philo, RIGHT_FORK);
+		if (died == 1 || eat((t_philo *) philo, &died) == 1)
 			break ;
 		pthread_mutex_unlock(&((t_philo *) philo)->forks->left_fork->mutex);
 		pthread_mutex_unlock(&((t_philo *) philo)->forks->right_fork->mutex);
-		if (sleeping((t_philo *) philo, &died) == 1)
+		if (died == 1 || sleeping((t_philo *) philo, &died) == 1)
 			break;
 		if (died == 1 || is_dead((t_philo *) philo, &died) == 1)
 			break;
-		printf("\033[1;93m%lld ms philo %d is thinking\n\033[0m", gt(((t_philo *)philo)->start_time), ((t_philo *)philo)->index);
+		message((t_philo *)philo, THINK);
 	}
 }
 

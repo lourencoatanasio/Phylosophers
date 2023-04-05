@@ -80,6 +80,7 @@ t_node	*create_node(int value, int index)
 	t_node	*node;
 
 	node = (t_node *)malloc(sizeof(t_node));
+	node->mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 	node->value = value;
 	node->index = index;
 	node->next = NULL;
@@ -113,9 +114,30 @@ void	print_list(t_node *head)
 	}
 }
 
-void message(t_philo *philo, int message)
+void	check_eat(t_philo *philo, int *died)
 {
+	int	i;
 
+	i = 0;
+	if(philo->times->times_must_eat == -1)
+		return ;
+	while (i < philo->num_philo)
+	{
+		if (philo->times_ate[i] < philo->times->times_must_eat)
+			return ;
+		i++;
+	}
+	*died = 1;
+}
+
+void message(t_philo *philo, int message, int *died)
+{
+	static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+	check_eat(philo, died);
+	if (*died == 1)
+		return ;
+	pthread_mutex_lock(&mutex);
 	if(message == 0)
 		printf("\033[1;34m%lld ms philo %d took left fork\n\033[0m", gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
 	else if(message == 1)
@@ -128,6 +150,7 @@ void message(t_philo *philo, int message)
 		printf("\033[1;93m%lld ms philo %d is thinking\n\033[0m", gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
 	else if(message == 5)
 		printf("\033[1;30m%lld ms philo %d died\n\033[0m", gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
+	pthread_mutex_unlock(&mutex);
 }
 
 
@@ -135,10 +158,12 @@ int is_dead(t_philo *philo, int *died)
 {
 	if (gt(philo->start_time) - philo->last_eat > philo->times->time_death)
 	{
-		message(philo, DIED);
-		pthread_mutex_unlock(&((t_philo *) philo)->forks->left_fork->mutex);
-		if((t_philo *)philo->forks->right_fork != NULL)
-			pthread_mutex_unlock(&((t_philo *) philo)->forks->right_fork->mutex);
+		message(philo, DIED, died);
+		while (philo->forks_list != NULL)
+		{
+			pthread_mutex_unlock(&philo->forks_list->mutex);
+			philo->forks_list = philo->forks_list->next;
+		}
 		*died = 1;
 		return (1);
 	}
@@ -148,12 +173,11 @@ int is_dead(t_philo *philo, int *died)
 int	eat(t_philo *philo, int *died)
 {
 	((t_philo *)philo)->last_eat = gt(((t_philo *)philo)->start_time);
-	if (is_dead(philo, died) == 1 || *died == 1)
-		return 1;
-	message(philo, EAT);
+	message(philo, EAT, died);
+	philo->times_ate[philo->index - 1]++;
 	while(gt(philo->start_time) - philo->last_eat < philo->times->time_eat)
 	{
-		if (is_dead(philo, died) == 1 || *died == 1)
+		if (*died == 1 || is_dead(philo, died) == 1)
 			return 1;
 	}
 	return 0;
@@ -161,7 +185,7 @@ int	eat(t_philo *philo, int *died)
 
 int sleeping(t_philo *philo, int *died)
 {
-	message(philo, SLEEP);
+	message(philo, SLEEP, died);
 	while(gt(philo->start_time) - philo->last_eat < philo->times->time_sleep + philo->times->time_eat)
 	{
 		if (is_dead(philo, died) == 1 || *died == 1)
@@ -175,15 +199,16 @@ void	*philosopher(void *philo)
 	static int		died;
 
 	died = 0;
+//	((t_philo *) philo)->times_must_eat = 0;
     while (*((t_philo *)philo)->start < ((t_philo *)philo)->num_philo)
 		;
 	gettimeofday(&((t_philo *)philo)->start_time, NULL);
 	if(((t_philo *)philo)->index % 2 == 0)
-		usleep(100000);
+		usleep(60000);
 	while(died == 1 || is_dead((t_philo *)philo, &died) == 0)
 	{
 		pthread_mutex_lock(&((t_philo *) philo)->forks->left_fork->mutex);
-		message((t_philo *)philo, LEFT_FORK);
+		message((t_philo *)philo, LEFT_FORK, &died);
 		if (((t_philo *)philo)->forks->right_fork == NULL)
 		{
 			while (1)
@@ -196,7 +221,7 @@ void	*philosopher(void *philo)
 		if (died == 1 || is_dead((t_philo *) philo, &died) == 1)
 			break ;
 		pthread_mutex_lock(&((t_philo *) philo)->forks->right_fork->mutex);
-		message((t_philo *)philo, RIGHT_FORK);
+		message((t_philo *)philo, RIGHT_FORK , &died);
 		if (died == 1 || eat((t_philo *) philo, &died) == 1)
 			break ;
 		pthread_mutex_unlock(&((t_philo *) philo)->forks->left_fork->mutex);
@@ -205,19 +230,30 @@ void	*philosopher(void *philo)
 			break;
 		if (died == 1 || is_dead((t_philo *) philo, &died) == 1)
 			break;
-		message((t_philo *)philo, THINK);
+		message((t_philo *)philo, THINK , &died);
 	}
 }
 
-t_philo *create_philo(t_forks *utils, int index, int num_philo, int *start, t_times *times)
+t_philo *create_philo(t_forks *utils, int index, int num_philo, int *start, t_begin *begin)
 {
+	int i;
 	t_philo *philo;
+
+	i = 0;
+	while(i < num_philo)
+	{
+		begin->times_ate[i] = 0;
+		i++;
+	}
 	philo = (t_philo *)malloc(sizeof(t_philo));
-	philo->times = times;
+	philo->times = begin->times;
 	philo->forks = utils;
 	philo->index = index;
+	philo->forks_list = begin->forks_list;
 	philo->num_philo = num_philo;
 	philo->start = start;
+	philo->last_eat = 0;
+	philo->times_ate = begin->times_ate;
 	return (philo);
 }
 
@@ -235,7 +271,7 @@ t_forks *assign_forks(t_node *forks, int index, int num_philo)
 	return (utils);
 }
 
-void    create_threads(t_node *forks, int num_philo, t_times *times)
+void    create_threads(t_begin *begin, int num_philo)
 {
     int i;
 	int j;
@@ -248,8 +284,8 @@ void    create_threads(t_node *forks, int num_philo, t_times *times)
     th = (pthread_t *)malloc(sizeof(pthread_t) * num_philo);
     while (i < num_philo)
     {
-        utils = assign_forks(forks, i + 1, num_philo);
-		philo[i] = create_philo(utils, i + 1, num_philo, &i, times);
+        utils = assign_forks(begin->forks_list, i + 1, num_philo);
+		philo[i] = create_philo(utils, i + 1, num_philo, &i, begin);
         pthread_create(&th[i], NULL, philosopher, philo[i]);
         i++;
     }
@@ -259,6 +295,15 @@ void    create_threads(t_node *forks, int num_philo, t_times *times)
         pthread_join(th[j], NULL);
         j++;
     }
+	j = 0;
+	while(j < num_philo)
+	{
+		free(philo[j]->forks);
+		free(philo[j]);
+		j++;
+	}
+	free(philo);
+	free(th);
 }
 
 t_times *create_times(int time_death, int time_eat, int time_sleep)
@@ -271,24 +316,63 @@ t_times *create_times(int time_death, int time_eat, int time_sleep)
 	return (times);
 }
 
-int main(int ac, char **av)
+int check_num(char *str)
 {
-	t_node *forks;
-	t_times *times;
 	int i;
-	if (ac != 6 && ac != 5)
-		return 1;
-	times = create_times(ft_atoi(av[2]), ft_atoi(av[3]), ft_atoi(av[4]));
+
 	i = 0;
-	forks = NULL;
-	while (i < ft_atoi(av[1]))
+	while (str[i])
 	{
-		add_node(&forks, create_node(1, i + 1));
+		if (str[i] < '0' || str[i] > '9')
+			return 1;
 		i++;
 	}
-	print_list(forks);
-    create_threads(forks, ft_atoi(av[1]), times);
-//	usleep(5000000);
-	free_list(&forks);
+	return 0;
+}
+
+int main(int ac, char **av)
+{
+	t_begin *begin;
+	int i;
+
+	if (ac != 6 && ac != 5)
+	{
+		printf("====================================\n||Error: Wrong number of arguments||\n====================================\n");
+		return 1;
+	}
+	i = 1;
+	while(i < ac)
+	{
+		if (check_num(av[i]) == 1)
+		{
+			printf("===========================\n||Error: invalid argument||\n===========================\n");
+			return 1;
+		}
+		i++;
+	}
+	begin = (t_begin *)malloc(sizeof(t_begin));
+	begin->times = create_times(ft_atoi(av[2]), ft_atoi(av[3]), ft_atoi(av[4]));
+	begin->forks_list = NULL;
+	i = 0;
+	while (i < ft_atoi(av[1]))
+	{
+		add_node(&begin->forks_list, create_node(1, i + 1));
+		i++;
+	}
+	if (ac == 6)
+	{
+		begin->times_ate = (int *)malloc(sizeof(int) * ft_atoi(av[1]));
+		begin->times->times_must_eat = ft_atoi(av[5]);
+	}
+	else
+	{
+		begin->times_ate = (int *)malloc(sizeof(int) * ft_atoi(av[1]));
+		begin->times->times_must_eat = -1;
+	}
+    create_threads(begin, ft_atoi(av[1]));
+	free(begin->times);
+	free_list(&begin->forks_list);
+	free(begin->times_ate);
+	free(begin);
 	return 0;
 }

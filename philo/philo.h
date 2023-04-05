@@ -31,6 +31,7 @@ typedef struct s_times
 	int time_death;
 	int time_sleep;
 	int time_eat;
+	int times_must_eat;
 } t_times;
 
 typedef struct s_forks
@@ -39,16 +40,24 @@ typedef struct s_forks
 	t_node *right_fork;
 } t_forks;
 
+typedef struct s_begin
+{
+	t_node	*forks_list;
+	t_times	*times;
+	int *times_ate;
+} t_begin;
+
 typedef struct s_philo
 {
 	t_forks *forks;
 	t_times *times;
+	t_node	*forks_list;
 	struct timeval start_time;
 	long long int last_eat;
 	int index;
 	int num_philo;
 	int *start;
-	int times_eat;
+	int *times_ate;
 } t_philo;
 
 #endif //PHILO_PHILO_H

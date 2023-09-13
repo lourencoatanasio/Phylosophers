@@ -36,7 +36,8 @@ int	is_dead(t_philo *philo, int *died)
 		message(philo, DIED, died);
 		while (philo->forks_list != NULL)
 		{
-			pthread_mutex_unlock(&philo->forks_list->mutex);
+			if (philo->forks_list->value == 1)
+				pthread_mutex_unlock(&philo->forks_list->mutex);
 			philo->forks_list = philo->forks_list->next;
 		}
 		*died = 1;

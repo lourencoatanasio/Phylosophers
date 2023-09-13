@@ -32,6 +32,7 @@ t_philo	*create_philo(t_forks *utils, int index, int *start, t_begin *begin)
 	philo->start = start;
 	philo->last_eat = 0;
 	philo->times_ate = begin->times_ate;
+	philo->no_fork = 0;
 	return (philo);
 }
 
@@ -81,8 +82,16 @@ void	pickup_fork(t_philo *philo, int fork, int *died)
 {
 	if (fork == 0)
 	{
-		pthread_mutex_lock(&((t_philo *) philo)->forks->left_fork->mutex);
-		message((t_philo *)philo, LEFT_FORK, died);
+		if(((t_philo *)philo)->index % 2 != 0)
+		{
+			((t_philo *) philo)->forks->left_fork->value = 1;
+			pthread_mutex_lock(&((t_philo *) philo)->forks->left_fork->mutex);
+		}
+		else
+		{
+			pthread_mutex_lock(&((t_philo *) philo)->forks->right_fork->mutex);
+			((t_philo *) philo)->forks->right_fork->value = 1;
+		}
 	}
 	else if (fork == 1)
 	{
@@ -91,8 +100,18 @@ void	pickup_fork(t_philo *philo, int fork, int *died)
 			wait((t_philo *) philo, died);
 			return ;
 		}
-		pthread_mutex_lock(&((t_philo *) philo)->forks->right_fork->mutex);
-		message((t_philo *)philo, RIGHT_FORK, died);
+		if(((t_philo *)philo)->index % 2 == 0)
+		{
+			message((t_philo *)philo, LEFT_FORK, died);
+			((t_philo *) philo)->forks->left_fork->value = 1;
+			pthread_mutex_lock(&((t_philo *) philo)->forks->left_fork->mutex);
+		}
+		else
+		{
+			message((t_philo *)philo, RIGHT_FORK, died);
+			pthread_mutex_lock(&((t_philo *) philo)->forks->right_fork->mutex);
+			((t_philo *) philo)->forks->right_fork->value = 1;
+		}
 	}
 }
 

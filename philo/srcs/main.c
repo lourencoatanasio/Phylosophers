@@ -19,6 +19,13 @@ int	main(int ac, char **av)
 
 	if (check_args(ac, av) == 1)
 		return (1);
+	if (av[1][0] == '1')
+	{
+		printf("\033[1;34m%i ms philo %d took left fork\n\033[0m", 0, 1);
+		usleep(ft_atoi(av[2]) * 1000);
+		printf("\033[1;30m%i ms philo %d died\n\033[0m", ft_atoi(av[2]) + 1, 1);
+		return (0);
+	}
 	begin = (t_begin *)malloc(sizeof(t_begin));
 	begin->num_philo = ft_atoi(av[1]);
 	begin->times = create_times(ft_atoi(av[2]), ft_atoi(av[3]), ft_atoi(av[4]));
@@ -26,7 +33,7 @@ int	main(int ac, char **av)
 	i = 0;
 	while (i < ft_atoi(av[1]))
 	{
-		add_node(&begin->forks_list, create_node(1, i + 1));
+		add_node(&begin->forks_list, create_node(0, i + 1));
 		i++;
 	}
 	begin->times_ate = (int *)malloc(sizeof(int) * ft_atoi(av[1]));

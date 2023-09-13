@@ -15,7 +15,7 @@ objs/%.o: srcs/%.c
 					@cc $(CFLAGS) -c $< -o $@
 
 $(NAME):    	$(OBJS)
-					@cc $(OBJS) $(CFLAGS) -o $(NAME) -lpthread
+					@cc $(OBJS) $(CFLAGS) -o $(NAME) -lpthread -fsanitize=thread
 
 all:      	$(NAME)
 

@@ -75,11 +75,12 @@ typedef struct s_philo
 	int				num_philo;
 	int				*start;
 	int				*times_ate;
+	int				no_fork;
 }	t_philo;
 
 void			message(t_philo *philo, int message, int *died);
 void			wait(t_philo *philo, int *died);
-void			unlock(t_philo *philo);
+void			unlock(t_philo *philo, int check);
 void			*philosopher(void *philo);
 long long int	s_to_mil(struct timeval t);
 long long int	gt(struct timeval start);
@@ -101,5 +102,6 @@ int				check_num(char *str);
 int				check_args(int ac, char **av);
 void			free_all(t_philo **philo, int num_philo, pthread_t	*th);
 void			other_free(t_begin *begin);
+
 
 #endif //PHILO_PHILO_H

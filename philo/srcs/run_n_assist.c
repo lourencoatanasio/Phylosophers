@@ -48,10 +48,28 @@ void	wait(t_philo *philo, int *died)
 			return ;
 }
 
-void	unlock(t_philo *philo)
+void	unlock(t_philo *philo, int check)
 {
-	pthread_mutex_unlock(&((t_philo *) philo)->forks->left_fork->mutex);
-	pthread_mutex_unlock(&((t_philo *) philo)->forks->right_fork->mutex);
+	if(check == 1)
+	{
+		if(((t_philo *)philo)->index % 2 != 0)
+		{
+			((t_philo *) philo)->forks->left_fork->value = 0;
+			pthread_mutex_unlock(&((t_philo *) philo)->forks->left_fork->mutex);
+		}
+		else
+		{
+			((t_philo *) philo)->forks->right_fork->value = 0;
+			pthread_mutex_unlock(&((t_philo *) philo)->forks->right_fork->mutex);
+		}
+	}
+	if(check == 2)
+	{
+		((t_philo *) philo)->forks->right_fork->value = 0;
+		((t_philo *) philo)->forks->left_fork->value = 0;
+		pthread_mutex_unlock(&((t_philo *) philo)->forks->left_fork->mutex);
+		pthread_mutex_unlock(&((t_philo *) philo)->forks->right_fork->mutex);
+	}
 }
 
 void	*philosopher(void *philo)
@@ -63,21 +81,42 @@ void	*philosopher(void *philo)
 		;
 	gettimeofday(&((t_philo *)philo)->start_time, NULL);
 	if (((t_philo *)philo)->index % 2 == 0)
-		usleep(60000);
+		usleep(10000);
 	while (died == 1 || is_dead((t_philo *)philo, &died) == 0)
 	{
+		((t_philo *)philo)->no_fork = 0;
+		if (died == 1 || is_dead((t_philo *) philo, &died) == 1)
+			break ;
 		pickup_fork((t_philo *)philo, LEFT_FORK, &died);
-		if (died == 1 || is_dead((t_philo *) philo, &died) == 1)
-			break ;
-		pickup_fork((t_philo *)philo, RIGHT_FORK, &died);
-		if (died == 1 || eat((t_philo *) philo, &died) == 1)
-			break ;
-		unlock((t_philo *) philo);
-		if (died == 1 || sleeping((t_philo *) philo, &died) == 1)
-			break ;
-		if (died == 1 || is_dead((t_philo *) philo, &died) == 1)
-			break ;
-		message((t_philo *)philo, THINK, &died);
+		if(((t_philo *)philo)->index % 2 != 0 && ((t_philo *) philo)->forks->right_fork != NULL)
+		{
+			if (((t_philo *) philo)->forks->right_fork->value == 1)
+			{
+				unlock((t_philo *) philo, 1);
+				((t_philo *) philo)->no_fork = 1;
+			}
+		}
+		else
+		{
+			if (((t_philo *) philo)->forks->left_fork->value == 1)
+			{
+				unlock((t_philo *) philo, 1);
+				((t_philo *) philo)->no_fork = 1;
+			}
+		}
+		if(((t_philo *)philo)->no_fork == 0)
+		{
+			message((t_philo *)philo, LEFT_FORK, &died);
+			pickup_fork((t_philo *) philo, RIGHT_FORK, &died);
+			if (died == 1 || eat((t_philo *) philo, &died) == 1)
+				break;
+			unlock((t_philo *) philo, 2);
+			if (died == 1 || sleeping((t_philo *) philo, &died) == 1)
+				break;
+			if (died == 1 || is_dead((t_philo *) philo, &died) == 1)
+				break;
+			message((t_philo *) philo, THINK, &died);
+		}
 	}
 	return (NULL);
 }

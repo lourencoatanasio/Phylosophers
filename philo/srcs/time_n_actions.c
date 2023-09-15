@@ -34,12 +34,7 @@ int	is_dead(t_philo *philo, int *died)
 	if (gt(philo->start_time) - philo->last_eat > philo->times->time_death)
 	{
 		message(philo, DIED, died);
-		while (philo->forks_list != NULL)
-		{
-			if (philo->forks_list->value == 1)
-				pthread_mutex_unlock(&philo->forks_list->mutex);
-			philo->forks_list = philo->forks_list->next;
-		}
+		unlock((t_philo *)philo, 3);
 		*died = 1;
 		return (1);
 	}

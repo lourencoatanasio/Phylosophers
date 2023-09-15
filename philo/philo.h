@@ -95,7 +95,7 @@ void			add_node(t_node **head, t_node *node);
 t_philo			*create_philo(t_forks *a, int b, int *c, t_begin *d);
 t_forks			*assign_forks(t_node *forks, int index, int num_philo);
 void			create_threads(t_begin *begin, int num_philo);
-void			pickup_fork(t_philo *philo, int fork, int *died);
+int			pickup_fork(t_philo *philo, int fork, int *died);
 t_times			*create_times(int time_death, int time_eat, int time_sleep);
 void			check_eat(t_philo *philo, int *died);
 int				check_num(char *str);

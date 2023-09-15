@@ -21,22 +21,22 @@ void	message(t_philo *philo, int message, int *died)
 		return ;
 	pthread_mutex_lock(&mutex);
 	if (message == 0)
-		printf("\033[1;34m%lld ms philo %d took left fork\n\033[0m",
+		printf("\033[1;34m%lld %d has taken a fork\n\033[0m",
 			gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
 	else if (message == 1)
-		printf("\033[1;34m%lld ms philo %d took right fork\n\033[0m",
+		printf("\033[1;34m%lld %d has taken a fork\n\033[0m",
 			gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
 	else if (message == 2)
-		printf("\033[1;91m%lld ms philo %d is eating\n\033[0m",
+		printf("\033[1;91m%lld %d is eating\n\033[0m",
 			gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
 	else if (message == 3)
-		printf("\033[1;92m%lld ms philo %d is sleeping\n\033[0m",
+		printf("\033[1;92m%lld %d is sleeping\n\033[0m",
 			gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
 	else if (message == 4)
-		printf("\033[1;93m%lld ms philo %d is thinking\n\033[0m",
+		printf("\033[1;93m%lld %d is thinking\n\033[0m",
 			gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
 	else if (message == 5)
-		printf("\033[1;30m%lld ms philo %d died\n\033[0m",
+		printf("\033[1;30m%lld %d died\n\033[0m",
 			gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
 	pthread_mutex_unlock(&mutex);
 }
@@ -70,6 +70,14 @@ void	unlock(t_philo *philo, int check)
 		pthread_mutex_unlock(&((t_philo *) philo)->forks->left_fork->mutex);
 		pthread_mutex_unlock(&((t_philo *) philo)->forks->right_fork->mutex);
 	}
+	if(check == 3)
+	{
+		if(((t_philo *) philo)->forks->left_fork->value == ((t_philo *) philo)->index)
+		{
+			pthread_mutex_unlock(&((t_philo *) philo)->forks->left_fork->mutex);
+			((t_philo *) philo)->forks->left_fork->value = 0;
+		}
+	}
 }
 
 void	*philosopher(void *philo)
@@ -85,12 +93,11 @@ void	*philosopher(void *philo)
 	while (died == 1 || is_dead((t_philo *)philo, &died) == 0)
 	{
 		((t_philo *)philo)->no_fork = 0;
-		if (died == 1 || is_dead((t_philo *) philo, &died) == 1)
+		if (died == 1 || pickup_fork((t_philo *)philo, LEFT_FORK, &died) == 1)
 			break ;
-		pickup_fork((t_philo *)philo, LEFT_FORK, &died);
-		if(((t_philo *)philo)->index % 2 != 0 && ((t_philo *) philo)->forks->right_fork != NULL)
+		if(((t_philo *)philo)->index % 2 != 0 && ((t_philo *) philo)->forks->right_fork != NULL && is_dead((t_philo *) philo, &died) != 1)
 		{
-			if (((t_philo *) philo)->forks->right_fork->value == 1)
+			if (((t_philo *) philo)->forks->right_fork->value == 1 && is_dead((t_philo *) philo, &died) != 1)
 			{
 				unlock((t_philo *) philo, 1);
 				((t_philo *) philo)->no_fork = 1;
@@ -98,23 +105,39 @@ void	*philosopher(void *philo)
 		}
 		else
 		{
-			if (((t_philo *) philo)->forks->left_fork->value == 1)
+			if (((t_philo *) philo)->forks->left_fork->value == 1 && is_dead((t_philo *) philo, &died) != 1)
 			{
 				unlock((t_philo *) philo, 1);
 				((t_philo *) philo)->no_fork = 1;
 			}
 		}
-		if(((t_philo *)philo)->no_fork == 0)
+		if(((t_philo *)philo)->no_fork == 0 && is_dead((t_philo *) philo, &died) != 1)
 		{
-			message((t_philo *)philo, LEFT_FORK, &died);
-			pickup_fork((t_philo *) philo, RIGHT_FORK, &died);
+			if(((t_philo *)philo)->index % 2 != 0)
+				message((t_philo *)philo, LEFT_FORK, &died);
+			else
+				message((t_philo *)philo, RIGHT_FORK, &died);
+			if (died == 1 || pickup_fork((t_philo *)philo, RIGHT_FORK, &died) == 1)
+			{
+				unlock((t_philo *) philo, 3);
+				break ;
+			}
 			if (died == 1 || eat((t_philo *) philo, &died) == 1)
-				break;
+			{
+				unlock((t_philo *) philo, 3);
+				break ;
+			}
 			unlock((t_philo *) philo, 2);
 			if (died == 1 || sleeping((t_philo *) philo, &died) == 1)
-				break;
+			{
+				unlock((t_philo *) philo, 3);
+				break ;
+			}
 			if (died == 1 || is_dead((t_philo *) philo, &died) == 1)
-				break;
+			{
+				unlock((t_philo *) philo, 3);
+				break ;
+			}
 			message((t_philo *) philo, THINK, &died);
 		}
 	}

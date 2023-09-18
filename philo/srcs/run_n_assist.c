@@ -48,97 +48,63 @@ void	wait(t_philo *philo, int *died)
 			return ;
 }
 
-void	unlock(t_philo *philo, int check)
+void	unlock_own(t_philo *p)
 {
-	if(check == 1)
+	if (((t_philo *) p)->forks->left_fork->value == ((t_philo *) p)->index)
 	{
-		if(((t_philo *)philo)->index % 2 != 0)
-		{
-			((t_philo *) philo)->forks->left_fork->value = 0;
-			pthread_mutex_unlock(&((t_philo *) philo)->forks->left_fork->mutex);
-		}
-		else
-		{
-			((t_philo *) philo)->forks->right_fork->value = 0;
-			pthread_mutex_unlock(&((t_philo *) philo)->forks->right_fork->mutex);
-		}
-	}
-	if(check == 2)
-	{
-		((t_philo *) philo)->forks->right_fork->value = 0;
-		((t_philo *) philo)->forks->left_fork->value = 0;
-		pthread_mutex_unlock(&((t_philo *) philo)->forks->left_fork->mutex);
-		pthread_mutex_unlock(&((t_philo *) philo)->forks->right_fork->mutex);
-	}
-	if(check == 3)
-	{
-		if(((t_philo *) philo)->forks->left_fork->value == ((t_philo *) philo)->index)
-		{
-			pthread_mutex_unlock(&((t_philo *) philo)->forks->left_fork->mutex);
-			((t_philo *) philo)->forks->left_fork->value = 0;
-		}
+		pthread_mutex_unlock(&((t_philo *) p)->forks->left_fork->mutex);
+		((t_philo *) p)->forks->left_fork->value = 0;
 	}
 }
 
-void	*philosopher(void *philo)
+void	unlock(t_philo *p, int check)
+{
+	if (check == 1)
+	{
+		if (((t_philo *)p)->index % 2 != 0)
+		{
+			((t_philo *) p)->forks->left_fork->value = 0;
+			pthread_mutex_unlock(&((t_philo *) p)->forks->left_fork->mutex);
+		}
+		else
+		{
+			((t_philo *) p)->forks->right_fork->value = 0;
+			pthread_mutex_unlock(&((t_philo *) p)->forks->right_fork->mutex);
+		}
+	}
+	if (check == 2)
+	{
+		((t_philo *) p)->forks->right_fork->value = 0;
+		((t_philo *) p)->forks->left_fork->value = 0;
+		pthread_mutex_unlock(&((t_philo *) p)->forks->left_fork->mutex);
+		pthread_mutex_unlock(&((t_philo *) p)->forks->right_fork->mutex);
+	}
+}
+
+void	*philosopher(void *p)
 {
 	static int		died;
 
 	died = 0;
-	while (*((t_philo *)philo)->start < ((t_philo *)philo)->num_philo)
+	while (*((t_philo *)p)->start < ((t_philo *)p)->num_philo)
 		;
-	gettimeofday(&((t_philo *)philo)->start_time, NULL);
-	if (((t_philo *)philo)->index % 2 == 0)
+	gettimeofday(&((t_philo *)p)->start_time, NULL);
+	if (((t_philo *)p)->index % 2 == 0)
 		usleep(10000);
-	while (died == 1 || is_dead((t_philo *)philo, &died) == 0)
+	while (died == 1 || is_dead((t_philo *)p, &died) == 0)
 	{
-		((t_philo *)philo)->no_fork = 0;
-		if (died == 1 || pickup_fork((t_philo *)philo, LEFT_FORK, &died) == 1)
+		((t_philo *)p)->no_fork = 0;
+		if (died == 1 || pickup_fork((t_philo *)p, LEFT_FORK, &died) == 1)
+		{
+			unlock_own((t_philo *)p);
 			break ;
-		if(((t_philo *)philo)->index % 2 != 0 && ((t_philo *) philo)->forks->right_fork != NULL && is_dead((t_philo *) philo, &died) != 1)
-		{
-			if (((t_philo *) philo)->forks->right_fork->value == 1 && is_dead((t_philo *) philo, &died) != 1)
-			{
-				unlock((t_philo *) philo, 1);
-				((t_philo *) philo)->no_fork = 1;
-			}
 		}
-		else
+		if (((t_philo *)p)->no_fork == 0 && is_dead((t_philo *) p, &died) != 1)
 		{
-			if (((t_philo *) philo)->forks->left_fork->value == 1 && is_dead((t_philo *) philo, &died) != 1)
-			{
-				unlock((t_philo *) philo, 1);
-				((t_philo *) philo)->no_fork = 1;
-			}
-		}
-		if(((t_philo *)philo)->no_fork == 0 && is_dead((t_philo *) philo, &died) != 1)
-		{
-			if(((t_philo *)philo)->index % 2 != 0)
-				message((t_philo *)philo, LEFT_FORK, &died);
-			else
-				message((t_philo *)philo, RIGHT_FORK, &died);
-			if (died == 1 || pickup_fork((t_philo *)philo, RIGHT_FORK, &died) == 1)
-			{
-				unlock((t_philo *) philo, 3);
+			filler_message((t_philo *)p, &died);
+			if (life(p, &died) == 1)
 				break ;
-			}
-			if (died == 1 || eat((t_philo *) philo, &died) == 1)
-			{
-				unlock((t_philo *) philo, 3);
-				break ;
-			}
-			unlock((t_philo *) philo, 2);
-			if (died == 1 || sleeping((t_philo *) philo, &died) == 1)
-			{
-				unlock((t_philo *) philo, 3);
-				break ;
-			}
-			if (died == 1 || is_dead((t_philo *) philo, &died) == 1)
-			{
-				unlock((t_philo *) philo, 3);
-				break ;
-			}
-			message((t_philo *) philo, THINK, &died);
+			message((t_philo *) p, THINK, &died);
 		}
 	}
 	return (NULL);

@@ -12,6 +12,14 @@
 
 #include "../philo.h"
 
+void	filler_message(t_philo *philo, int *died)
+{
+	if (((t_philo *)philo)->index % 2 != 0)
+		message((t_philo *)philo, LEFT_FORK, died);
+	else
+		message((t_philo *)philo, RIGHT_FORK, died);
+}
+
 int	main(int ac, char **av)
 {
 	t_begin	*begin;
@@ -19,13 +27,6 @@ int	main(int ac, char **av)
 
 	if (check_args(ac, av) == 1)
 		return (1);
-	if (av[1][0] == '1')
-	{
-		printf("\033[1;34m%i ms philo %d took left fork\n\033[0m", 0, 1);
-		usleep(ft_atoi(av[2]) * 1000);
-		printf("\033[1;30m%i ms philo %d died\n\033[0m", ft_atoi(av[2]) + 1, 1);
-		return (0);
-	}
 	begin = (t_begin *)malloc(sizeof(t_begin));
 	begin->num_philo = ft_atoi(av[1]);
 	begin->times = create_times(ft_atoi(av[2]), ft_atoi(av[3]), ft_atoi(av[4]));

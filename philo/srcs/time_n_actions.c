@@ -34,7 +34,7 @@ int	is_dead(t_philo *philo, int *died)
 	if (gt(philo->start_time) - philo->last_eat > philo->times->time_death)
 	{
 		message(philo, DIED, died);
-		unlock((t_philo *)philo, 3);
+		unlock_own((t_philo *) philo);
 		*died = 1;
 		return (1);
 	}

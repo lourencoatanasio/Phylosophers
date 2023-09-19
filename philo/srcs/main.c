@@ -12,14 +12,6 @@
 
 #include "../philo.h"
 
-void	filler_message(t_philo *philo, int *died)
-{
-	if (((t_philo *)philo)->index % 2 != 0)
-		message((t_philo *)philo, LEFT_FORK, died);
-	else
-		message((t_philo *)philo, RIGHT_FORK, died);
-}
-
 int	main(int ac, char **av)
 {
 	t_begin	*begin;

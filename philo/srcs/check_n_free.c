@@ -61,8 +61,13 @@ int	check_args(int ac, char **av)
 		}
 		i++;
 	}
-	if (one_philo(av) == 0)
+	if (ft_atoi(av[1]) == 1)
+	{
+		printf("\033[1;34m%d %d has taken a fork\n\033[0m", 0, 1);
+		usleep(ft_atoi(av[2]) * 1000);
+		printf("\033[1;30m%d %d died\n\033[0m", ft_atoi(av[2]) + 1, 1);
 		return (1);
+	}
 	return (0);
 }
 

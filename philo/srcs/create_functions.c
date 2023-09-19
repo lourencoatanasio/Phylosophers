@@ -65,8 +65,7 @@ void	create_threads(t_begin *begin, int num_philo)
 	{
 		utils = assign_forks(begin->forks_list, nu.i + 1, num_philo);
 		philo[nu.i] = create_philo(utils, nu.i + 1, &nu.i, begin);
-		if (pthread_create(&th[nu.i], NULL, philosopher, philo[nu.i]) != 0)
-			break ;
+		pthread_create(&th[nu.i], NULL, philosopher, philo[nu.i]);
 		nu.i++;
 	}
 	nu.j = 0;
@@ -79,16 +78,16 @@ void	create_threads(t_begin *begin, int num_philo)
 	free_all(philo, num_philo, th);
 }
 
-int	pickup_fork(t_philo *p, int fork, int *died)
+int	pickup_fork(t_philo *philo, int fork, int *died)
 {
 	if (fork == 0)
 	{
-		if (fork_one(p, died) == 1)
+		if (fork_one(philo, died) == 1)
 			return (1);
 	}
 	else if (fork == 1)
 	{
-		if (fork_two(p, died) == 1)
+		if (fork_two(philo, died) == 1)
 			return (1);
 	}
 	return (0);

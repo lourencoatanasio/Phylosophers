@@ -1,7 +1,7 @@
 SRCS		=		main.c check_n_free.c create_functions.c \
 					functions.c \
 					run_n_assist.c time_n_actions.c \
-					split_files.c \
+					extra_functions.c
 
 OBJS 		=		 $(addprefix objs/, $(SRCS:.c=.o))
 

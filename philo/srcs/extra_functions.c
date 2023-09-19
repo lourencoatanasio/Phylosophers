@@ -1,53 +1,23 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   split_files.c                                      :+:      :+:    :+:   */
+/*   extra_functions.c                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: ldiogo <ldiogo@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/09/18 12:53:47 by ldiogo            #+#    #+#             */
-/*   Updated: 2023/09/18 12:53:48 by ldiogo           ###   ########.fr       */
+/*   Created: 2023/09/19 16:20:16 by ldiogo            #+#    #+#             */
+/*   Updated: 2023/09/19 16:20:17 by ldiogo           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../philo.h"
 
-int	life(t_philo *philo, int *died)
+void	filler_message(t_philo *philo, int *died)
 {
-	if (*died == 1 || pickup_fork((t_philo *)philo, RIGHT_FORK, died) == 1)
-	{
-		unlock_own((t_philo *) philo);
-		return (1);
-	}
-	if (*died == 1 || eat((t_philo *) philo, died) == 1)
-	{
-		unlock_own((t_philo *) philo);
-		return (1);
-	}
-	unlock((t_philo *) philo, 2);
-	if (*died == 1 || sleeping((t_philo *) philo, died) == 1)
-	{
-		unlock_own((t_philo *) philo);
-		return (1);
-	}
-	if (*died == 1 || is_dead((t_philo *) philo, died) == 1)
-	{
-		unlock_own((t_philo *) philo);
-		return (1);
-	}
-	return (0);
-}
-
-int	one_philo(char **av)
-{
-	if (ft_atoi(av[1]) == 1)
-	{
-		printf("\033[1;34m%i ms philo %d took a fork\n\033[0m", 0, 1);
-		usleep(ft_atoi(av[2]) * 1000);
-		printf("\033[1;30m%i ms philo %d died\n\033[0m", ft_atoi(av[2]) + 1, 1);
-		return (0);
-	}
-	return (1);
+	if ((philo)->index % 2 != 0)
+		message(philo, LEFT_FORK, died);
+	else
+		message(philo, RIGHT_FORK, died);
 }
 
 int	fork_one(t_philo *p, int *died)
@@ -79,8 +49,7 @@ int	fork_two(t_philo *p, int *died)
 {
 	if (((t_philo *)p)->index % 2 == 0)
 	{
-		while (is_dead((t_philo *)p, died) != 1
-			&& ((t_philo *)p)->forks->left_fork->value != 0)
+		while (((t_philo *)p)->forks->left_fork->value != 0)
 		{
 			if (is_dead((t_philo *)p, died) == 1)
 				return (1);
@@ -91,8 +60,7 @@ int	fork_two(t_philo *p, int *died)
 	}
 	else
 	{
-		while (is_dead((t_philo *)p, died) != 1
-			&& ((t_philo *)p)->forks->right_fork->value != 0)
+		while (((t_philo *)p)->forks->right_fork->value != 0)
 		{
 			if (is_dead((t_philo *)p, died) == 1)
 				return (1);

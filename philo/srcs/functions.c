@@ -75,7 +75,7 @@ t_node	*create_node(int value, int index)
 	t_node	*node;
 
 	node = (t_node *)malloc(sizeof(t_node));
-	node->mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_init(&node->mutex, NULL);
 	node->value = value;
 	node->index = index;
 	node->next = NULL;

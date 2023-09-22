@@ -34,8 +34,10 @@ int	is_dead(t_philo *philo, int *died)
 	if (gt(philo->start_time) - philo->last_eat > philo->times->time_death)
 	{
 		message(philo, DIED, died);
-		unlock((t_philo *)philo, 3);
+		unlock_own((t_philo *) philo);
+		pthread_mutex_lock(philo->death);
 		*died = 1;
+		pthread_mutex_unlock(philo->death);
 		return (1);
 	}
 	return (0);
@@ -45,13 +47,12 @@ int	eat(t_philo *philo, int *died)
 {
 	((t_philo *)philo)->last_eat = gt(((t_philo *)philo)->start_time);
 	message(philo, EAT, died);
+	philo->times_ate[philo->index - 1]++;
 	while (gt(philo->start_time) - philo->last_eat < philo->times->time_eat)
 	{
-		if (*died == 1 || is_dead(philo, died) == 1)
+		if (check_dead(philo, died) || is_dead(philo, died) == 1)
 			return (1);
 	}
-	philo->times_ate[philo->index - 1]++;
-	check_eat(philo, died);
 	return (0);
 }
 

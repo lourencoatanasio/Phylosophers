@@ -12,6 +12,14 @@
 
 #include "../philo.h"
 
+void	filler_message(t_philo *philo, int *died)
+{
+	if (((t_philo *)philo)->index % 2 != 0)
+		message((t_philo *)philo, LEFT_FORK, died);
+	else
+		message((t_philo *)philo, RIGHT_FORK, died);
+}
+
 int	main(int ac, char **av)
 {
 	t_begin	*begin;
@@ -23,6 +31,11 @@ int	main(int ac, char **av)
 	begin->num_philo = ft_atoi(av[1]);
 	begin->times = create_times(ft_atoi(av[2]), ft_atoi(av[3]), ft_atoi(av[4]));
 	begin->forks_list = NULL;
+	pthread_mutex_init(&begin->death, NULL);
+	pthread_mutex_init(&begin->write, NULL);
+	pthread_mutex_init(&begin->begin, NULL);
+	pthread_mutex_init(&begin->forks, NULL);
+	pthread_mutex_init(&begin->unlock, NULL);
 	i = 0;
 	while (i < ft_atoi(av[1]))
 	{

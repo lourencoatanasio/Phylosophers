@@ -24,6 +24,11 @@ t_philo	*create_philo(t_forks *utils, int index, int *start, t_begin *begin)
 		i++;
 	}
 	philo = (t_philo *)malloc(sizeof(t_philo));
+	philo->death = &begin->death;
+	philo->write = &begin->write;
+	philo->begin = &begin->begin;
+	philo->forks_mutex = &begin->forks;
+	philo->unlock = &begin->unlock;
 	philo->times = begin->times;
 	philo->forks = utils;
 	philo->index = index;
@@ -63,10 +68,13 @@ void	create_threads(t_begin *begin, int num_philo)
 	th = (pthread_t *)malloc(sizeof(pthread_t) * num_philo);
 	while (nu.i < num_philo)
 	{
+		pthread_mutex_lock(&begin->begin);
 		utils = assign_forks(begin->forks_list, nu.i + 1, num_philo);
 		philo[nu.i] = create_philo(utils, nu.i + 1, &nu.i, begin);
-		pthread_create(&th[nu.i], NULL, philosopher, philo[nu.i]);
+		if (pthread_create(&th[nu.i], NULL, philosopher, philo[nu.i]) != 0)
+			break ;
 		nu.i++;
+		pthread_mutex_unlock(&begin->begin);
 	}
 	nu.j = 0;
 	while (nu.j < num_philo)
@@ -74,20 +82,21 @@ void	create_threads(t_begin *begin, int num_philo)
 		pthread_join(th[nu.j], NULL);
 		nu.j++;
 	}
+	destroy_mutex(begin);
 	nu.j = 0;
 	free_all(philo, num_philo, th);
 }
 
-int	pickup_fork(t_philo *philo, int fork, int *died)
+int	pickup_fork(t_philo *p, int fork, int *died)
 {
 	if (fork == 0)
 	{
-		if (fork_one(philo, died) == 1)
+		if (fork_one(p, died) == 1)
 			return (1);
 	}
 	else if (fork == 1)
 	{
-		if (fork_two(philo, died) == 1)
+		if (fork_two(p, died) == 1)
 			return (1);
 	}
 	return (0);

@@ -25,7 +25,9 @@ void	check_eat(t_philo *philo, int *died)
 			return ;
 		i++;
 	}
+	pthread_mutex_lock(philo->death);
 	*died = 1;
+	pthread_mutex_unlock(philo->death);
 }
 
 int	check_num(char *str)
@@ -61,13 +63,8 @@ int	check_args(int ac, char **av)
 		}
 		i++;
 	}
-	if (ft_atoi(av[1]) == 1)
-	{
-		printf("\033[1;34m%d %d has taken a fork\n\033[0m", 0, 1);
-		usleep(ft_atoi(av[2]) * 1000);
-		printf("\033[1;30m%d %d died\n\033[0m", ft_atoi(av[2]) + 1, 1);
+	if (one_philo(av) == 0)
 		return (1);
-	}
 	return (0);
 }
 

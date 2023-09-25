@@ -36,7 +36,7 @@ int	life(t_philo *philo, int *died)
 		unlock_own((t_philo *) philo);
 		return (1);
 	}
-    unlock_own((t_philo *)philo);
+	unlock((t_philo *) philo, 2);
     if (check_dead((t_philo *)philo, died) == 1 || sleeping((t_philo *) philo, died) == 1)
 	{
 		unlock_own((t_philo *) philo);
@@ -78,27 +78,25 @@ int	fork_one(t_philo *p, int *died)
 {
 	if (((t_philo *)p)->index % 2 != 0)
 	{
-		while (is_dead((t_philo *)p, died) != 1
-			&& check_fork(((t_philo *)p), ((t_philo *)p)->forks->left_fork->value) != 0)
+		while (is_dead((t_philo *)p, died) != 1 && check_fork(((t_philo *)p), ((t_philo *)p)->forks->left_fork->value) != 0)
 			;
 		if (is_dead((t_philo *)p, died) == 1)
 			return (1);
+		pthread_mutex_lock(&((t_philo *) p)->forks->left_fork->mutex);
 		pthread_mutex_lock(((t_philo *) p)->forks_mutex);
 		((t_philo *) p)->forks->left_fork->value = ((t_philo *) p)->index;
 		pthread_mutex_unlock(((t_philo *) p)->forks_mutex);
-		pthread_mutex_lock(&((t_philo *) p)->forks->left_fork->mutex);
 	}
 	else
 	{
-		while (is_dead((t_philo *)p, died) != 1
-			&& check_fork(((t_philo *)p),((t_philo *)p)->forks->right_fork->value) != 0)
+		while (is_dead((t_philo *)p, died) != 1 && check_fork(((t_philo *)p),((t_philo *)p)->forks->right_fork->value) != 0)
 			;
 		if (is_dead((t_philo *)p, died) == 1)
 			return (1);
+		pthread_mutex_lock(&((t_philo *) p)->forks->right_fork->mutex);
 		pthread_mutex_lock(((t_philo *) p)->forks_mutex);
 		((t_philo *) p)->forks->right_fork->value = ((t_philo *) p)->index;
 		pthread_mutex_unlock(((t_philo *) p)->forks_mutex);
-		pthread_mutex_lock(&((t_philo *) p)->forks->right_fork->mutex);
 	}
 	return (0);
 }
@@ -111,27 +109,27 @@ int	fork_two(t_philo *p, int *died)
 	{
         while (is_dead((t_philo *)p, died) != 1
                && check_fork(((t_philo *)p), ((t_philo *)p)->forks->left_fork->value) != 0)
-            ;
+			;
         if (is_dead((t_philo *)p, died) == 1)
             return (1);
 		message((t_philo *)p, LEFT_FORK, died);
+		pthread_mutex_lock(&((t_philo *) p)->forks->left_fork->mutex);
 		pthread_mutex_lock(((t_philo *) p)->forks_mutex);
 		((t_philo *) p)->forks->left_fork->value = ((t_philo *) p)->index;
 		pthread_mutex_unlock(((t_philo *) p)->forks_mutex);
-		pthread_mutex_lock(&((t_philo *) p)->forks->left_fork->mutex);
 	}
 	else
 	{
         while (is_dead((t_philo *)p, died) != 1
                && check_fork(((t_philo *)p),((t_philo *)p)->forks->right_fork->value) != 0)
-            ;
+			;
         if (is_dead((t_philo *)p, died) == 1)
             return (1);
 		message((t_philo *)p, RIGHT_FORK, died);
+		pthread_mutex_lock(&((t_philo *) p)->forks->right_fork->mutex);
 		pthread_mutex_lock(((t_philo *) p)->forks_mutex);
 		((t_philo *) p)->forks->right_fork->value = ((t_philo *) p)->index;
 		pthread_mutex_unlock(((t_philo *) p)->forks_mutex);
-		pthread_mutex_lock(&((t_philo *) p)->forks->right_fork->mutex);
 	}
 	return (0);
 }

@@ -82,7 +82,7 @@ void	create_threads(t_begin *begin, int num_philo)
 		pthread_join(th[nu.j], NULL);
 		nu.j++;
 	}
-	destroy_mutex(begin);
+//	destroy_mutex(begin);
 	nu.j = 0;
 	free_all(philo, num_philo, th);
 }

@@ -60,18 +60,18 @@ int check_own_fork(t_philo *philo, int fork)
 
 void	unlock_own(t_philo *p)
 {
-    pthread_mutex_lock(((t_philo *) p)->unlock);
+    pthread_mutex_lock(((t_philo *)p)->unlock);
     if (check_own_fork(((t_philo *)p), ((t_philo *)p)->forks->left_fork->value) == 1)
 	{
 		pthread_mutex_unlock(&((t_philo *) p)->forks->left_fork->mutex);
-		((t_philo *) p)->forks->left_fork->value = 0;
+		((t_philo *)p)->forks->left_fork->value = 0;
 	}
     if(check_own_fork(((t_philo *)p), ((t_philo *)p)->forks->right_fork->value) == 1)
     {
         pthread_mutex_unlock(&((t_philo *) p)->forks->right_fork->mutex);
-        ((t_philo *) p)->forks->right_fork->value = 0;
+        ((t_philo *)p)->forks->right_fork->value = 0;
     }
-    pthread_mutex_unlock(((t_philo *) p)->unlock);
+	pthread_mutex_unlock(((t_philo *)p)->unlock);
 }
 
 void	unlock(t_philo *p, int check)
@@ -142,8 +142,7 @@ void	*philosopher(void *p)
 	died = 0;
 	pthread_mutex_unlock(((t_philo *)p)->death);
 	while (waiting((t_philo *)p) == 1)
-		;
-	usleep(1000);
+		usleep(100);
 	gettimeofday(&((t_philo *)p)->start_time, NULL);
 	if (((t_philo *)p)->index % 2 == 0)
 		usleep(10000);
@@ -165,8 +164,11 @@ void	*philosopher(void *p)
 			message((t_philo *) p, THINK, &died);
 		}
 	}
+	pthread_mutex_lock(((t_philo *)p)->death);
+	if (died == 0)
+		died = 1;
+	pthread_mutex_unlock(((t_philo *)p)->death);
     unlock_own((t_philo *)p);
-    printf("philo %d forks %d %d\n", ((t_philo *)p)->index, ((t_philo *)p)->forks->left_fork->value, ((t_philo *)p)->forks->right_fork->value);
     unlock_own((t_philo *)p);
 	return (NULL);
 }

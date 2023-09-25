@@ -46,13 +46,32 @@ void	wait(t_philo *philo, int *died)
 			return ;
 }
 
+int check_own_fork(t_philo *philo, int fork)
+{
+    pthread_mutex_lock(philo->forks_mutex);
+    if (fork == philo->index)
+    {
+        pthread_mutex_unlock(philo->forks_mutex);
+        return (1);
+    }
+    pthread_mutex_unlock(philo->forks_mutex);
+    return (0);
+}
+
 void	unlock_own(t_philo *p)
 {
-	if (check_fork(((t_philo *)p), ((t_philo *)p)->forks->left_fork->value) != 0)
+    pthread_mutex_lock(((t_philo *) p)->unlock);
+    if (check_own_fork(((t_philo *)p), ((t_philo *)p)->forks->left_fork->value) == 1)
 	{
 		pthread_mutex_unlock(&((t_philo *) p)->forks->left_fork->mutex);
 		((t_philo *) p)->forks->left_fork->value = 0;
 	}
+    if(check_own_fork(((t_philo *)p), ((t_philo *)p)->forks->right_fork->value) == 1)
+    {
+        pthread_mutex_unlock(&((t_philo *) p)->forks->right_fork->mutex);
+        ((t_philo *) p)->forks->right_fork->value = 0;
+    }
+    pthread_mutex_unlock(((t_philo *) p)->unlock);
 }
 
 void	unlock(t_philo *p, int check)
@@ -130,19 +149,24 @@ void	*philosopher(void *p)
 		usleep(10000);
 	while (check_dead((t_philo *)p, &died) != 1 || is_dead((t_philo *)p, &died) == 0)
 	{
-		((t_philo *)p)->no_fork = 0;
 		if (check_dead((t_philo *)p, &died) == 1 || pickup_fork((t_philo *)p, LEFT_FORK, &died) == 1)
 		{
 			unlock_own((t_philo *)p);
 			break ;
 		}
-		if (((t_philo *)p)->no_fork == 0 && is_dead((t_philo *) p, &died) != 1)
+		if (is_dead((t_philo *) p, &died) != 1)
 		{
 			filler_message((t_philo *)p, &died);
 			if (life(p, &died) == 1)
-				break ;
+            {
+                unlock_own((t_philo *)p);
+                break ;
+            }
 			message((t_philo *) p, THINK, &died);
 		}
 	}
+    unlock_own((t_philo *)p);
+    printf("philo %d forks %d %d\n", ((t_philo *)p)->index, ((t_philo *)p)->forks->left_fork->value, ((t_philo *)p)->forks->right_fork->value);
+    unlock_own((t_philo *)p);
 	return (NULL);
 }

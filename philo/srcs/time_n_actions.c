@@ -33,8 +33,7 @@ int	is_dead(t_philo *philo, int *died)
 {
 	if (gt(philo->start_time) - philo->last_eat > philo->times->time_death)
 	{
-		message(philo, DIED, died);
-		unlock_own((t_philo *) philo);
+        message(philo, DIED, died);
 		pthread_mutex_lock(philo->death);
 		*died = 1;
 		pthread_mutex_unlock(philo->death);
@@ -51,7 +50,7 @@ int	eat(t_philo *philo, int *died)
 	while (gt(philo->start_time) - philo->last_eat < philo->times->time_eat)
 	{
 		if (check_dead(philo, died) || is_dead(philo, died) == 1)
-			return (1);
+            return (1);
 	}
 	return (0);
 }
@@ -62,7 +61,7 @@ int	sleeping(t_philo *philo, int *died)
 	while (gt(philo->start_time) - philo->last_eat
 		< philo->times->time_sleep + philo->times->time_eat)
 	{
-		if (is_dead(philo, died) == 1 || *died == 1)
+		if (is_dead(philo, died) == 1 || check_dead(philo, died))
 			return (1);
 	}
 	return (0);

@@ -120,6 +120,7 @@ int				life(t_philo *philo, int *died);
 void			filler_message(t_philo *philo, int *died);
 int				check_dead(t_philo *philo, int *died);
 int 			check_fork(t_philo *philo, int fork);
+int				check_own_fork(t_philo *philo, int fork);
 void			destroy_mutex(t_begin *begin);
 
 

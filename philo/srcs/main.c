@@ -20,14 +20,8 @@ void	filler_message(t_philo *philo, int *died)
 		message((t_philo *)philo, RIGHT_FORK, died);
 }
 
-int	main(int ac, char **av)
+void	assemble_begin(t_begin *begin, char **av)
 {
-	t_begin	*begin;
-	int		i;
-
-	if (check_args(ac, av) == 1)
-		return (1);
-	begin = (t_begin *)malloc(sizeof(t_begin));
 	begin->num_philo = ft_atoi(av[1]);
 	begin->times = create_times(ft_atoi(av[2]), ft_atoi(av[3]), ft_atoi(av[4]));
 	begin->forks_list = NULL;
@@ -36,6 +30,17 @@ int	main(int ac, char **av)
 	pthread_mutex_init(&begin->begin, NULL);
 	pthread_mutex_init(&begin->forks, NULL);
 	pthread_mutex_init(&begin->unlock, NULL);
+}
+
+int	main(int ac, char **av)
+{
+	t_begin	*begin;
+	int		i;
+
+	if (check_args(ac, av) == 1)
+		return (1);
+	begin = (t_begin *)malloc(sizeof(t_begin));
+	assemble_begin(begin, av);
 	i = 0;
 	while (i < ft_atoi(av[1]))
 	{

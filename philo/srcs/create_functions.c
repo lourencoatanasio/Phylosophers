@@ -56,6 +56,18 @@ t_forks	*assign_forks(t_node *forks, int index, int num_philo)
 	return (utils);
 }
 
+void	thread_join(pthread_t *th, int num_philo)
+{
+	int	i;
+
+	i = 0;
+	while (i < num_philo)
+	{
+		pthread_join(th[i], NULL);
+		i++;
+	}
+}
+
 void	create_threads(t_begin *begin, int num_philo)
 {
 	t_forks					*utils;
@@ -76,30 +88,9 @@ void	create_threads(t_begin *begin, int num_philo)
 		nu.i++;
 		pthread_mutex_unlock(&begin->begin);
 	}
-	nu.j = 0;
-	while (nu.j < num_philo)
-	{
-		pthread_join(th[nu.j], NULL);
-		nu.j++;
-	}
-//	destroy_mutex(begin);
-	nu.j = 0;
+	thread_join(th, num_philo);
+	destroy_mutex(begin);
 	free_all(philo, num_philo, th);
-}
-
-int	pickup_fork(t_philo *p, int fork, int *died)
-{
-	if (fork == 0)
-	{
-		if (fork_one(p, died) == 1)
-			return (1);
-	}
-	else if (fork == 1)
-	{
-		if (fork_two(p, died) == 1)
-			return (1);
-	}
-	return (0);
 }
 
 t_times	*create_times(int time_death, int time_eat, int time_sleep)

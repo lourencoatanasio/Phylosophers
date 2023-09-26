@@ -14,15 +14,14 @@
 
 void	message(t_philo *philo, int message, int *died)
 {
-	check_eat(philo, died);
 	if (check_dead(philo, died) == 1)
 		return ;
 	pthread_mutex_lock(philo->write);
 	if (message == 0)
-		printf("\033[1;34m%lld %d has taken a left fork\n\033[0m",
+		printf("\033[1;34m%lld %d has taken a fork\n\033[0m",
 			gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
 	else if (message == 1)
-		printf("\033[1;34m%lld %d has taken a right fork\n\033[0m",
+		printf("\033[1;34m%lld %d has taken a fork\n\033[0m",
 			gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
 	else if (message == 2)
 		printf("\033[1;91m%lld %d is eating\n\033[0m",
@@ -46,92 +45,34 @@ void	wait(t_philo *philo, int *died)
 			return ;
 }
 
-int check_own_fork(t_philo *philo, int fork)
+int	check_own_fork(t_philo *philo, int fork)
 {
-    pthread_mutex_lock(philo->forks_mutex);
-    if (fork == philo->index)
-    {
-        pthread_mutex_unlock(philo->forks_mutex);
-        return (1);
-    }
-    pthread_mutex_unlock(philo->forks_mutex);
-    return (0);
+	pthread_mutex_lock(philo->forks_mutex);
+	if (fork == philo->index)
+	{
+		pthread_mutex_unlock(philo->forks_mutex);
+		return (1);
+	}
+	pthread_mutex_unlock(philo->forks_mutex);
+	return (0);
 }
 
 void	unlock_own(t_philo *p)
 {
-    pthread_mutex_lock(((t_philo *)p)->unlock);
-    if (check_own_fork(((t_philo *)p), ((t_philo *)p)->forks->left_fork->value) == 1)
+	pthread_mutex_lock(((t_philo *)p)->unlock);
+	if (check_own_fork(((t_philo *)p),
+			((t_philo *)p)->forks->left_fork->value) == 1)
 	{
 		pthread_mutex_unlock(&((t_philo *) p)->forks->left_fork->mutex);
 		((t_philo *)p)->forks->left_fork->value = 0;
 	}
-    if(check_own_fork(((t_philo *)p), ((t_philo *)p)->forks->right_fork->value) == 1)
-    {
-        pthread_mutex_unlock(&((t_philo *) p)->forks->right_fork->mutex);
-        ((t_philo *)p)->forks->right_fork->value = 0;
-    }
-	pthread_mutex_unlock(((t_philo *)p)->unlock);
-}
-
-void	unlock(t_philo *p, int check)
-{
-	if (check == 1)
+	if (check_own_fork(((t_philo *)p),
+			((t_philo *)p)->forks->right_fork->value) == 1)
 	{
-		pthread_mutex_lock(((t_philo *) p)->forks_mutex);
-		if (((t_philo *)p)->index % 2 != 0)
-		{
-			((t_philo *) p)->forks->left_fork->value = 0;
-			pthread_mutex_unlock(&((t_philo *) p)->forks->left_fork->mutex);
-		}
-		else
-		{
-			((t_philo *) p)->forks->right_fork->value = 0;
-			pthread_mutex_unlock(&((t_philo *) p)->forks->right_fork->mutex);
-		}
-		pthread_mutex_unlock(((t_philo *) p)->forks_mutex);
-	}
-	if (check == 2)
-	{
-		pthread_mutex_lock(((t_philo *) p)->forks_mutex);
-		((t_philo *) p)->forks->right_fork->value = 0;
-		((t_philo *) p)->forks->left_fork->value = 0;
-		pthread_mutex_unlock(((t_philo *) p)->forks_mutex);
-		pthread_mutex_unlock(&((t_philo *) p)->forks->left_fork->mutex);
 		pthread_mutex_unlock(&((t_philo *) p)->forks->right_fork->mutex);
+		((t_philo *)p)->forks->right_fork->value = 0;
 	}
-}
-
-int waiting(t_philo *p)
-{
-	pthread_mutex_lock(((t_philo *)p)->begin);
-	if(*((t_philo *)p)->start < ((t_philo *)p)->num_philo)
-	{
-		pthread_mutex_unlock(((t_philo *)p)->begin);
-		return (1);
-	}
-	else
-	{
-		pthread_mutex_unlock(((t_philo *)p)->begin);
-		return (0);
-	}
-}
-
-void	destroy_mutex(t_begin *begin)
-{
-	t_node *tmp;
-
-	tmp = begin->forks_list;
-	while (tmp)
-	{
-		pthread_mutex_destroy(&tmp->mutex);
-		tmp = tmp->next;
-	}
-	pthread_mutex_destroy(&begin->write);
-	pthread_mutex_destroy(&begin->death);
-	pthread_mutex_destroy(&begin->begin);
-	pthread_mutex_destroy(&begin->forks);
-	pthread_mutex_destroy(&begin->unlock);
+	pthread_mutex_unlock(((t_philo *)p)->unlock);
 }
 
 void	*philosopher(void *p)
@@ -142,33 +83,23 @@ void	*philosopher(void *p)
 	died = 0;
 	pthread_mutex_unlock(((t_philo *)p)->death);
 	while (waiting((t_philo *)p) == 1)
-		usleep(100);
+		;
 	gettimeofday(&((t_philo *)p)->start_time, NULL);
 	if (((t_philo *)p)->index % 2 == 0)
-		usleep(10000);
-	while (check_dead((t_philo *)p, &died) != 1 || is_dead((t_philo *)p, &died) == 0)
+		usleep(1000);
+	while (check_dead((t_philo *)p, &died) != 1
+		|| is_dead((t_philo *)p, &died) == 0)
 	{
-		if (check_dead((t_philo *)p, &died) == 1 || pickup_fork((t_philo *)p, LEFT_FORK, &died) == 1)
+		if (life(p, &died) == 1)
 		{
 			unlock_own((t_philo *)p);
 			break ;
-		}
-		if (is_dead((t_philo *) p, &died) != 1)
-		{
-			filler_message((t_philo *)p, &died);
-			if (life(p, &died) == 1)
-            {
-                unlock_own((t_philo *)p);
-                break ;
-            }
-			message((t_philo *) p, THINK, &died);
 		}
 	}
 	pthread_mutex_lock(((t_philo *)p)->death);
 	if (died == 0)
 		died = 1;
 	pthread_mutex_unlock(((t_philo *)p)->death);
-    unlock_own((t_philo *)p);
-    unlock_own((t_philo *)p);
+	unlock_own((t_philo *)p);
 	return (NULL);
 }

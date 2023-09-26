@@ -58,15 +58,15 @@ typedef struct s_forks
 
 typedef struct s_begin
 {
-	t_node	*forks_list;
-	t_times	*times;
-	pthread_mutex_t	death;
-	pthread_mutex_t	write;
-	pthread_mutex_t	begin;
-	pthread_mutex_t forks;
-	pthread_mutex_t unlock;
-	int		*times_ate;
-	int		num_philo;
+	t_node				*forks_list;
+	t_times				*times;
+	pthread_mutex_t		death;
+	pthread_mutex_t		write;
+	pthread_mutex_t		begin;
+	pthread_mutex_t		forks;
+	pthread_mutex_t		unlock;
+	int					*times_ate;
+	int					num_philo;
 }	t_begin;
 
 typedef struct s_philo
@@ -78,7 +78,7 @@ typedef struct s_philo
 	pthread_mutex_t	*write;
 	pthread_mutex_t	*begin;
 	pthread_mutex_t	*forks_mutex;
-	pthread_mutex_t *unlock;
+	pthread_mutex_t	*unlock;
 	struct timeval	start_time;
 	long long int	last_eat;
 	int				index;
@@ -115,13 +115,12 @@ void			other_free(t_begin *begin);
 int				one_philo(char **av);
 void			unlock_own(t_philo *philo);
 int				fork_two(t_philo *p, int *died);
-int				fork_one(t_philo *p, int *died);
+void			fork_one(t_philo *p, int *died);
 int				life(t_philo *philo, int *died);
 void			filler_message(t_philo *philo, int *died);
 int				check_dead(t_philo *philo, int *died);
-int 			check_fork(t_philo *philo, int fork);
+int				check_fork(t_philo *philo, int fork);
 int				check_own_fork(t_philo *philo, int fork);
 void			destroy_mutex(t_begin *begin);
-
 
 #endif //PHILO_PHILO_H

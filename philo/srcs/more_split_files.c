@@ -14,15 +14,16 @@
 
 int	waiting(t_philo *p)
 {
-	pthread_mutex_lock(((t_philo *)p)->begin);
+//	pthread_mutex_lock(((t_philo *)p)->begin);
+//	printf("start: %d\n", *((t_philo *)p)->start);
 	if (*((t_philo *)p)->start < ((t_philo *)p)->num_philo)
 	{
-		pthread_mutex_unlock(((t_philo *)p)->begin);
+//		pthread_mutex_unlock(((t_philo *)p)->begin);
 		return (1);
 	}
 	else
 	{
-		pthread_mutex_unlock(((t_philo *)p)->begin);
+//		pthread_mutex_unlock(((t_philo *)p)->begin);
 		return (0);
 	}
 }

@@ -17,6 +17,11 @@ void	message(t_philo *philo, int message, int *died)
 	if (check_dead(philo, died) == 1)
 		return ;
 	pthread_mutex_lock(philo->write);
+	if (check_dead(philo, died) == 1)
+	{
+		pthread_mutex_unlock(philo->write);
+		return;
+	}
 	if (message == 0)
 		printf("\033[1;34m%lld %d has taken a fork\n\033[0m",
 			gt(((t_philo *) philo)->start_time), ((t_philo *) philo)->index);
@@ -63,16 +68,29 @@ void	unlock_own(t_philo *p)
 	if (check_own_fork(((t_philo *)p),
 			((t_philo *)p)->forks->left_fork->value) == 1)
 	{
-		pthread_mutex_unlock(&((t_philo *) p)->forks->left_fork->mutex);
+		pthread_mutex_lock(((t_philo *) p)->forks_mutex);
 		((t_philo *)p)->forks->left_fork->value = 0;
+		pthread_mutex_unlock(((t_philo *) p)->forks_mutex);
+		pthread_mutex_unlock(&((t_philo *) p)->forks->left_fork->mutex);
 	}
 	if (check_own_fork(((t_philo *)p),
 			((t_philo *)p)->forks->right_fork->value) == 1)
 	{
-		pthread_mutex_unlock(&((t_philo *) p)->forks->right_fork->mutex);
+		pthread_mutex_lock(((t_philo *) p)->forks_mutex);
 		((t_philo *)p)->forks->right_fork->value = 0;
+		pthread_mutex_unlock(((t_philo *) p)->forks_mutex);
+		pthread_mutex_unlock(&((t_philo *) p)->forks->right_fork->mutex);
 	}
 	pthread_mutex_unlock(((t_philo *)p)->unlock);
+}
+
+int check_start(t_philo *philo)
+{
+	int	i;
+	pthread_mutex_lock(philo->death);
+	i = *((t_philo *)philo)->start;
+	pthread_mutex_unlock(philo->death);
+	return (i);
 }
 
 void	*philosopher(void *p)
@@ -81,8 +99,9 @@ void	*philosopher(void *p)
 
 	pthread_mutex_lock(((t_philo *)p)->death);
 	died = 0;
+	*((t_philo *)p)->start += 1;
 	pthread_mutex_unlock(((t_philo *)p)->death);
-	while (waiting((t_philo *)p) == 1)
+	while (check_start((t_philo *)p) < ((t_philo *)p)->num_philo)
 		;
 	gettimeofday(&((t_philo *)p)->start_time, NULL);
 	if (((t_philo *)p)->index % 2 == 0)
@@ -91,15 +110,7 @@ void	*philosopher(void *p)
 		|| is_dead((t_philo *)p, &died) == 0)
 	{
 		if (life(p, &died) == 1)
-		{
-			unlock_own((t_philo *)p);
 			break ;
-		}
 	}
-	pthread_mutex_lock(((t_philo *)p)->death);
-	if (died == 0)
-		died = 1;
-	pthread_mutex_unlock(((t_philo *)p)->death);
-	unlock_own((t_philo *)p);
 	return (NULL);
 }

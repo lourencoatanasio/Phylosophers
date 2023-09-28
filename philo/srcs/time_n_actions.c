@@ -62,7 +62,7 @@ int	sleeping(t_philo *philo, int *died)
 	while (gt(philo->start_time) - philo->last_eat
 		< philo->times->time_sleep + philo->times->time_eat)
 	{
-		if (is_dead(philo, died) == 1 || check_dead(philo, died))
+		if (is_dead(philo, died) == 1 || check_dead(philo, died) == 1)
 			return (1);
 	}
 	return (0);

@@ -17,12 +17,9 @@ t_philo	*create_philo(t_forks *utils, int index, int *start, t_begin *begin)
 	int		i;
 	t_philo	*philo;
 
-	i = 0;
-	while (i < begin->num_philo)
-	{
+	i = -1;
+	while (++i < begin->num_philo)
 		begin->times_ate[i] = 0;
-		i++;
-	}
 	philo = (t_philo *)malloc(sizeof(t_philo));
 	philo->death = &begin->death;
 	philo->write = &begin->write;
@@ -38,6 +35,7 @@ t_philo	*create_philo(t_forks *utils, int index, int *start, t_begin *begin)
 	philo->last_eat = 0;
 	philo->times_ate = begin->times_ate;
 	philo->no_fork = 0;
+	philo->start_time = begin->start_time;
 	return (philo);
 }
 
@@ -74,7 +72,9 @@ void	create_threads(t_begin *begin, int num_philo)
 	pthread_t				*th;
 	t_philo					**philo;
 	t_numbers				nu;
+	int						wait;
 
+	wait = 0;
 	nu.i = 0;
 	philo = (t_philo **)malloc(sizeof(t_philo *) * num_philo);
 	th = (pthread_t *)malloc(sizeof(pthread_t) * num_philo);
@@ -82,7 +82,7 @@ void	create_threads(t_begin *begin, int num_philo)
 	{
 		pthread_mutex_lock(&begin->begin);
 		utils = assign_forks(begin->forks_list, nu.i + 1, num_philo);
-		philo[nu.i] = create_philo(utils, nu.i + 1, &nu.i, begin);
+		philo[nu.i] = create_philo(utils, nu.i + 1, &wait, begin);
 		if (pthread_create(&th[nu.i], NULL, philosopher, philo[nu.i]) != 0)
 			break ;
 		nu.i++;

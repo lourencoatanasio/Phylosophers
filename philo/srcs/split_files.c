@@ -38,21 +38,20 @@ int	life(t_philo *philo, int *died)
 {
 	if (check_dead((t_philo *) philo, died) == 1
 		|| is_dead((t_philo *) philo, died) == 1)
-	{
-		unlock_own((t_philo *) philo);
 		return (1);
-	}
 	if (has_forks(philo) == 1 && check_dead(philo, died) == 0)
 	{
 		fork_one((t_philo *) philo, died);
-		if (check_dead((t_philo *) philo, died) == 1
-			|| is_dead((t_philo *) philo, died) == 1)
-			return (1);
 		if (is_dead((t_philo *) philo, died) == 1
+			|| check_dead((t_philo *) philo, died) == 1
 			|| eat((t_philo *) philo, died) == 1)
+		{
+			unlock((t_philo *) philo, 2);
 			return (1);
+		}
 		unlock((t_philo *) philo, 2);
-		if (check_dead((t_philo *) philo, died) == 1
+		if (is_dead((t_philo *) philo, died) == 1
+			|| check_dead((t_philo *) philo, died) == 1
 			|| sleeping((t_philo *) philo, died) == 1)
 			return (1);
 		message((t_philo *) philo, THINK, died);
@@ -64,9 +63,9 @@ int	one_philo(char **av)
 {
 	if (ft_atoi(av[1]) == 1)
 	{
-		printf("\033[1;34m%i ms philo %d took a fork\n\033[0m", 0, 1);
+		printf("\033[1;34m%i %d took a fork\n\033[0m", 0, 1);
 		usleep(ft_atoi(av[2]) * 1000);
-		printf("\033[1;30m%i ms philo %d died\n\033[0m", ft_atoi(av[2]) + 1, 1);
+		printf("\033[1;30m%i %d died\n\033[0m", ft_atoi(av[2]) + 1, 1);
 		return (0);
 	}
 	return (1);

@@ -25,6 +25,7 @@ void	assemble_begin(t_begin *begin, char **av)
 	begin->num_philo = ft_atoi(av[1]);
 	begin->times = create_times(ft_atoi(av[2]), ft_atoi(av[3]), ft_atoi(av[4]));
 	begin->forks_list = NULL;
+	gettimeofday(&begin->start_time, NULL);
 	pthread_mutex_init(&begin->death, NULL);
 	pthread_mutex_init(&begin->write, NULL);
 	pthread_mutex_init(&begin->begin, NULL);

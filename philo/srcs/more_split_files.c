@@ -12,22 +12,6 @@
 
 #include "../philo.h"
 
-int	waiting(t_philo *p)
-{
-//	pthread_mutex_lock(((t_philo *)p)->begin);
-//	printf("start: %d\n", *((t_philo *)p)->start);
-	if (*((t_philo *)p)->start < ((t_philo *)p)->num_philo)
-	{
-//		pthread_mutex_unlock(((t_philo *)p)->begin);
-		return (1);
-	}
-	else
-	{
-//		pthread_mutex_unlock(((t_philo *)p)->begin);
-		return (0);
-	}
-}
-
 void	destroy_mutex(t_begin *begin)
 {
 	t_node	*tmp;
@@ -49,12 +33,24 @@ void	unlock(t_philo *p, int check)
 {
 	if (check == 2)
 	{
-		pthread_mutex_lock(((t_philo *) p)->forks_mutex);
-		((t_philo *) p)->forks->right_fork->value = 0;
-		((t_philo *) p)->forks->left_fork->value = 0;
-		pthread_mutex_unlock(((t_philo *) p)->forks_mutex);
-		pthread_mutex_unlock(&((t_philo *) p)->forks->left_fork->mutex);
-		pthread_mutex_unlock(&((t_philo *) p)->forks->right_fork->mutex);
+		if (p->index % 2 == 0)
+		{
+			pthread_mutex_lock(((t_philo *) p)->forks_mutex);
+			((t_philo *) p)->forks->right_fork->value = 0;
+			((t_philo *) p)->forks->left_fork->value = 0;
+			pthread_mutex_unlock(((t_philo *) p)->forks_mutex);
+			pthread_mutex_unlock(&((t_philo *) p)->forks->right_fork->mutex);
+			pthread_mutex_unlock(&((t_philo *) p)->forks->left_fork->mutex);
+		}
+		else
+		{
+			pthread_mutex_lock(((t_philo *) p)->forks_mutex);
+			((t_philo *) p)->forks->right_fork->value = 0;
+			((t_philo *) p)->forks->left_fork->value = 0;
+			pthread_mutex_unlock(((t_philo *) p)->forks_mutex);
+			pthread_mutex_unlock(&((t_philo *) p)->forks->left_fork->mutex);
+			pthread_mutex_unlock(&((t_philo *) p)->forks->right_fork->mutex);
+		}
 	}
 }
 

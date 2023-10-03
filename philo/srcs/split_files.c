@@ -36,26 +36,28 @@ int	has_forks(t_philo *philo)
 
 int	life(t_philo *philo, int *died)
 {
-	if (check_dead((t_philo *) philo, died) == 1
-		|| is_dead((t_philo *) philo, died) == 1)
-		return (1);
-	if (has_forks(philo) == 1 && check_dead(philo, died) == 0)
+	if (check_dead(philo, died) == 0 && is_dead(philo, died) == 0)
 	{
-		fork_one((t_philo *) philo, died);
-		if (is_dead((t_philo *) philo, died) == 1
-			|| check_dead((t_philo *) philo, died) == 1
-			|| eat((t_philo *) philo, died) == 1)
+		if (has_forks((t_philo *) philo) == 1)
 		{
+			fork_one((t_philo *) philo, died);
+			if (is_dead((t_philo *) philo, died) == 1
+				|| check_dead((t_philo *) philo, died) == 1
+				|| eat((t_philo *) philo, died) == 1)
+			{
+				unlock((t_philo *) philo, 2);
+				return (1);
+			}
 			unlock((t_philo *) philo, 2);
-			return (1);
+			if (is_dead((t_philo *) philo, died) == 1
+				|| check_dead((t_philo *) philo, died) == 1
+				|| sleeping((t_philo *) philo, died) == 1)
+				return (1);
+			message((t_philo *) philo, THINK, died);
 		}
-		unlock((t_philo *) philo, 2);
-		if (is_dead((t_philo *) philo, died) == 1
-			|| check_dead((t_philo *) philo, died) == 1
-			|| sleeping((t_philo *) philo, died) == 1)
-			return (1);
-		message((t_philo *) philo, THINK, died);
 	}
+	else
+		return (1);
 	return (0);
 }
 

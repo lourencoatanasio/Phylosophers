@@ -14,13 +14,11 @@
 
 void	message(t_philo *philo, int message, int *died)
 {
-	if (check_dead(philo, died) == 1)
-		return ;
 	pthread_mutex_lock(philo->write);
 	if (check_dead(philo, died) == 1)
 	{
 		pthread_mutex_unlock(philo->write);
-		return;
+		return ;
 	}
 	if (message == 0)
 		printf("\033[1;34m%lld %d has taken a fork\n\033[0m",
@@ -62,31 +60,10 @@ int	check_own_fork(t_philo *philo, int fork)
 	return (0);
 }
 
-void	unlock_own(t_philo *p)
-{
-	pthread_mutex_lock(((t_philo *)p)->unlock);
-	if (check_own_fork(((t_philo *)p),
-			((t_philo *)p)->forks->left_fork->value) == 1)
-	{
-		pthread_mutex_lock(((t_philo *) p)->forks_mutex);
-		((t_philo *)p)->forks->left_fork->value = 0;
-		pthread_mutex_unlock(((t_philo *) p)->forks_mutex);
-		pthread_mutex_unlock(&((t_philo *) p)->forks->left_fork->mutex);
-	}
-	if (check_own_fork(((t_philo *)p),
-			((t_philo *)p)->forks->right_fork->value) == 1)
-	{
-		pthread_mutex_lock(((t_philo *) p)->forks_mutex);
-		((t_philo *)p)->forks->right_fork->value = 0;
-		pthread_mutex_unlock(((t_philo *) p)->forks_mutex);
-		pthread_mutex_unlock(&((t_philo *) p)->forks->right_fork->mutex);
-	}
-	pthread_mutex_unlock(((t_philo *)p)->unlock);
-}
-
-int check_start(t_philo *philo)
+int	check_start(t_philo *philo)
 {
 	int	i;
+
 	pthread_mutex_lock(philo->death);
 	i = *((t_philo *)philo)->start;
 	pthread_mutex_unlock(philo->death);
@@ -95,15 +72,17 @@ int check_start(t_philo *philo)
 
 void	*philosopher(void *p)
 {
-	static int		died;
+	static int				died;
+	static struct timeval	time;
 
 	pthread_mutex_lock(((t_philo *)p)->death);
 	died = 0;
+	gettimeofday(&time, NULL);
 	*((t_philo *)p)->start += 1;
 	pthread_mutex_unlock(((t_philo *)p)->death);
 	while (check_start((t_philo *)p) < ((t_philo *)p)->num_philo)
 		;
-	gettimeofday(&((t_philo *)p)->start_time, NULL);
+	((t_philo *)p)->start_time = time;
 	if (((t_philo *)p)->index % 2 == 0)
 		usleep(1000);
 	while (check_dead((t_philo *)p, &died) != 1
